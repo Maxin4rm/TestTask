@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TestTask.Data;
 using TestTask.Models;
 using TestTask.Services.Interfaces;
@@ -31,15 +31,27 @@ namespace TestTask.Services.Implementations
                 .OrderBy(a => a.Id)
                 .FirstOrDefault();
 
+            authorWithMinId.Books = null;
+
             return authorWithMinId;
         }
 
         public async Task<List<Author>> GetAuthors()
         {
-            return await _dbContext.Authors
-            .Where(author => _dbContext.Books
-                .Count(book => book.AuthorId == author.Id && book.PublishDate.Year > 2015) % 2 == 0)
-            .ToListAsync();
+            var booksAfter2015 = await _dbContext.Books
+                .Where(b => b.PublishDate > new DateTime(2015, 1, 1))
+                .Include(b => b.Author)
+                .ToListAsync();
+
+            // Группируем книги по авторам и выбираем тех, у кого четное количество книг
+            var authorsWithEvenBooks = booksAfter2015
+                .GroupBy(b => b.Author.Id)
+                .Where(g => g.Count() % 2 == 0)
+                .Select(g => g.First().Author) // Получаем автора из группы
+                .Distinct()
+                .ToList();
+            authorsWithEvenBooks.ForEach(x => x.Books = null);
+            return authorsWithEvenBooks;
         }
     }
 }
