@@ -43,14 +43,15 @@ namespace TestTask.Services.Implementations
                 .Include(b => b.Author)
                 .ToListAsync();
 
-            // Группируем книги по авторам и выбираем тех, у кого четное количество книг
             var authorsWithEvenBooks = booksAfter2015
                 .GroupBy(b => b.Author.Id)
                 .Where(g => g.Count() % 2 == 0)
-                .Select(g => g.First().Author) // Получаем автора из группы
+                .Select(g => g.First().Author)
                 .Distinct()
                 .ToList();
+                
             authorsWithEvenBooks.ForEach(x => x.Books = null);
+            
             return authorsWithEvenBooks;
         }
     }
